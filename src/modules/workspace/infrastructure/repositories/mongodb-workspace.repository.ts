@@ -99,6 +99,16 @@ export class MongoDBWorkspaceRepository implements IWorkspaceRepository {
     return result ? toEntity(result) : null
   }
 
+  async updateMemberRole(workspaceId: string, userId: string, role: string): Promise<Workspace | null> {
+    const col = await this.collection()
+    const result = await col.findOneAndUpdate(
+      { _id: new ObjectId(workspaceId), 'members.userId': userId },
+      { $set: { 'members.$.role': role, updatedAt: new Date() } },
+      { returnDocument: 'after' }
+    )
+    return result ? toEntity(result) : null
+  }
+
   async removeMember(workspaceId: string, userId: string): Promise<Workspace | null> {
     const col = await this.collection()
     const result = await col.findOneAndUpdate(

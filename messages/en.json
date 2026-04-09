@@ -130,13 +130,21 @@
   "members": {
     "title": "Members",
     "loading": "Loading members…",
+    "noMembers": "No other members yet.",
     "inviteByEmail": "Invite by email",
     "emailPlaceholder": "user@example.com",
+    "roleOwner": "Owner",
     "roleEditor": "Editor",
     "roleViewer": "Viewer",
     "removeTitle": "Remove member",
+    "changeRole": "Change role",
+    "inviteSuccess": "Member added successfully",
+    "roleUpdated": "Role updated",
     "failedToInvite": "Failed to invite",
-    "networkError": "Network error"
+    "failedToRemove": "Failed to remove member",
+    "failedToUpdate": "Failed to update role",
+    "networkError": "Network error",
+    "joinedAt": "Joined {date}"
   },
   "saveToCollection": {
     "title": "Save to Collection",

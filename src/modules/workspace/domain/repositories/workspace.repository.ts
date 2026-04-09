@@ -14,6 +14,7 @@ export interface IWorkspaceRepository extends IWorkspaceFinder {
   create(dto: CreateWorkspaceDTO): Promise<Workspace>
   update(id: string, dto: UpdateWorkspaceDTO): Promise<Workspace | null>
   addMember(workspaceId: string, userId: string, role: string): Promise<Workspace | null>
+  updateMemberRole(workspaceId: string, userId: string, role: string): Promise<Workspace | null>
   removeMember(workspaceId: string, userId: string): Promise<Workspace | null>
   delete(id: string): Promise<boolean>
 }

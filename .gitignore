@@ -11,7 +11,8 @@
 /playwright/.auth
 /playwright-report
 /test-results
-/tests/e2e/generated
+/tests
+/playwright-report/e2e
 
 # next.js
 /.next/

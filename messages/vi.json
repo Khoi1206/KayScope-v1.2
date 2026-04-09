@@ -130,13 +130,21 @@
   "members": {
     "title": "Thành viên",
     "loading": "Đang tải thành viên\u2026",
+    "noMembers": "Chưa có thành viên nào khác.",
     "inviteByEmail": "Mời qua email",
     "emailPlaceholder": "nguoidung@example.com",
+    "roleOwner": "Quản trị viên",
     "roleEditor": "Biên tập viên",
     "roleViewer": "Người xem",
     "removeTitle": "Xóa thành viên",
+    "changeRole": "Đổi vai trò",
+    "inviteSuccess": "Đã thêm thành viên thành công",
+    "roleUpdated": "Đã cập nhật vai trò",
     "failedToInvite": "Mời thất bại",
-    "networkError": "Lỗi mạng"
+    "failedToRemove": "Xóa thành viên thất bại",
+    "failedToUpdate": "Cập nhật vai trò thất bại",
+    "networkError": "Lỗi mạng",
+    "joinedAt": "Tham gia {date}"
   },
   "saveToCollection": {
     "title": "Lưu vào bộ sưu tập",

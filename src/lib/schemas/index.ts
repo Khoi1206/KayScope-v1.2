@@ -61,6 +61,10 @@ export const inviteMemberBodySchema = z.object({
   role: z.enum(['editor', 'viewer']),
 })
 
+export const updateMemberRoleBodySchema = z.object({
+  role: z.enum(['editor', 'viewer']),
+})
+
 // ── Collections ────────────────────────────────────────────────────────────
 
 export const createCollectionBodySchema = z.object({
