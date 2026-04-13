@@ -82,10 +82,9 @@ export function AppShell({ userName: initialUserName, userEmail: _userEmail, use
 
   const {
     history,
-    loadingHistory,
+    loadingHistory, hasMoreHistory,
     activityLogs, setActivityLogs,
-    loadingActivity,
-    dbActivityCount,
+    loadingActivity, hasMoreActivity,
     loadHistory, loadActivity,
     loadMoreHistory, loadMoreActivity,
   } = useHistoryActivity(currentWs, sidebarSection)
@@ -345,11 +344,11 @@ export function AppShell({ userName: initialUserName, userEmail: _userEmail, use
           openInTab={openInTab} activeReq={activeReq} isDraft={isDraft}
           environments={environments} currentEnvId={currentEnvId} setCurrentEnvId={setCurrentEnvId}
           setEnvEditorTarget={setEnvEditorTarget} deleteEnvironment={deleteEnvironment}
-          history={history} loadingHistory={loadingHistory}
+          history={history} loadingHistory={loadingHistory} hasMoreHistory={hasMoreHistory}
           openHistoryInTab={openHistoryInTab} loadMoreHistory={loadMoreHistory}
           activityLogs={activityLogs} loadingActivity={loadingActivity}
           loadActivity={loadActivity} loadMoreActivity={loadMoreActivity}
-          dbActivityCount={dbActivityCount}
+          hasMoreActivity={hasMoreActivity}
           setConfirmModal={setConfirmModal} setRenameModal={setRenameModal}
           currentEnvName={currentEnv?.name}
           onOpenTestRun={handleOpenTestRun}

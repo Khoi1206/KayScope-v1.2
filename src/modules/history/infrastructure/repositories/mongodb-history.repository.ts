@@ -1,4 +1,4 @@
-import { ObjectId } from 'mongodb'
+import { ObjectId, type Filter } from 'mongodb'
 import { getDatabase } from '@/lib/db/mongodb'
 import type { IHistoryRepository } from '../../domain/repositories/history.repository'
 import type { RequestHistory, CreateHistoryDTO } from '../../domain/entities/history.entity'
@@ -49,6 +49,10 @@ async function ensureIndexes(): Promise<void> {
         const col = db.collection('request_history')
         await col.createIndex({ workspaceId: 1, createdAt: -1 }).catch(() => {})
         await col.createIndex({ requestId: 1, createdAt: -1 }).catch(() => {})
+        await col.createIndex(
+          { createdAt: 1 },
+          { expireAfterSeconds: 30 * 24 * 60 * 60 },  // 30 ngày
+        ).catch(() => {})
       })
       .catch(() => {})
   }
@@ -71,6 +75,21 @@ export class MongoDBHistoryRepository implements IHistoryRepository {
       .limit(limit)
       .toArray()
     return docs.map(toEntity)
+  }
+
+  async findByWorkspaceCursor(
+    workspaceId: string,
+    limit = 50,
+    afterId?: string,
+  ): Promise<{ items: RequestHistory[], nextCursor: string | null }> {
+    const col = await this.collection()
+    const query: Filter<HistoryDocument> = { workspaceId: new ObjectId(workspaceId) }
+    if (afterId) query._id = { $lt: new ObjectId(afterId) }
+    const docs = await col.find(query).sort({ _id: -1 }).limit(limit).toArray()
+    return {
+      items: docs.map(toEntity),
+      nextCursor: docs.length === limit ? docs[docs.length - 1]._id.toHexString() : null,
+    }
   }
 
   async findByRequest(requestId: string, limit = 20): Promise<RequestHistory[]> {

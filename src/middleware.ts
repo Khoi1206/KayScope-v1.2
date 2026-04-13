@@ -31,7 +31,6 @@ export const config = {
     '/test-builder/:path*',
     '/test-builder',
     '/api/playwright/:path*',
-    '/workspace/:path*',
     '/api/workspaces/:path*',
     '/api/collections/:path*',
     '/api/requests/:path*',

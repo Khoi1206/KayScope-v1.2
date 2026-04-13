@@ -3,11 +3,12 @@ import { requireSession } from '@/lib/auth/session'
 import { withApiHandler } from '@/lib/api/api-handler'
 import { createWorkspaceRepository, createActivityRepository } from '@/lib/db/repository-factory'
 import { WorkspaceMembershipService } from '@/lib/workspace/workspace-membership.service'
-import { GetActivityUseCase } from '@/modules/activity/domain/usecases/get-activity.usecase'
+import { GetActivityCursorUseCase } from '@/modules/activity/domain/usecases/get-activity-cursor.usecase'
+import { getCachedActivity, setCachedActivity } from '@/lib/redis/activity-cache'
 
 interface Params { params: { id: string } }
 
-/** GET /api/workspaces/[id]/activity?limit=50&skip=0 */
+/** GET /api/workspaces/[id]/activity?limit=50&cursor=<hex> */
 export async function GET(req: NextRequest, { params }: Params) {
   return withApiHandler(async () => {
     const session = await requireSession()
@@ -15,10 +16,23 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     const url = new URL(req.url)
     const limit = Math.min(parseInt(url.searchParams.get('limit') ?? '50'), 100)
-    const skip = Math.max(parseInt(url.searchParams.get('skip') ?? '0', 10) || 0, 0)
+    const cursor = url.searchParams.get('cursor') ?? undefined
 
-    const { logs, total } = await new GetActivityUseCase(createActivityRepository()).execute(params.id, limit, skip)
+    // First page with no cursor — serve from Redis cache when available
+    if (!cursor) {
+      const cached = await getCachedActivity(params.id)
+      if (cached) return NextResponse.json(cached)
+    }
 
-    return NextResponse.json({ logs, total, limit, skip })
+    const { items, nextCursor } = await new GetActivityCursorUseCase(
+      createActivityRepository(),
+    ).execute(params.id, limit, cursor)
+
+    const payload = { logs: items, nextCursor }
+
+    // Only cache the first page
+    if (!cursor) await setCachedActivity(params.id, payload)
+
+    return NextResponse.json(payload)
   })
 }

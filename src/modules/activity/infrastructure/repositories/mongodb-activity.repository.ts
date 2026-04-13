@@ -1,4 +1,4 @@
-import { ObjectId } from 'mongodb'
+import { ObjectId, type Filter } from 'mongodb'
 import { getDatabase } from '@/lib/db/mongodb'
 import type { IActivityRepository } from '../../domain/repositories/activity.repository'
 import type { ActivityLog, ActivityAction, ActivityResourceType, CreateActivityLogDTO } from '../../domain/entities/activity.entity'
@@ -34,8 +34,14 @@ let indexEnsured: Promise<void> | undefined
 async function ensureIndex(): Promise<void> {
   if (!indexEnsured) {
     indexEnsured = getDatabase()
-      .then(db => db.collection('activity_logs').createIndex({ workspaceId: 1, createdAt: -1 }))
-      .then(() => {})
+      .then(async db => {
+        const col = db.collection('activity_logs')
+        await col.createIndex({ workspaceId: 1, createdAt: -1 }).catch(() => {})
+        await col.createIndex(
+          { createdAt: 1 },
+          { expireAfterSeconds: 90 * 24 * 60 * 60 },  // 90 ngày
+        ).catch(() => {})
+      })
       .catch(() => {})
   }
   return indexEnsured
@@ -62,6 +68,21 @@ export class MongoDBActivityRepository implements IActivityRepository {
     }
     const result = await col.insertOne(doc as ActivityDocument)
     return toEntity({ ...doc, _id: result.insertedId })
+  }
+
+  async findByWorkspaceCursor(
+    workspaceId: string,
+    limit = 50,
+    afterId?: string,
+  ): Promise<{ items: ActivityLog[], nextCursor: string | null }> {
+    const col = await this.collection()
+    const query: Filter<ActivityDocument> = { workspaceId: new ObjectId(workspaceId) }
+    if (afterId) query._id = { $lt: new ObjectId(afterId) }
+    const docs = await col.find(query).sort({ _id: -1 }).limit(limit).toArray()
+    return {
+      items: docs.map(toEntity),
+      nextCursor: docs.length === limit ? docs[docs.length - 1]._id.toHexString() : null,
+    }
   }
 
   async findByWorkspaceSince(workspaceId: string, since: Date): Promise<ActivityLog[]> {

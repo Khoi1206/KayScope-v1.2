@@ -1,5 +1,6 @@
 import { createActivityRepository } from '@/lib/db/repository-factory'
 import type { ActivityAction, ActivityResourceType } from '@/modules/activity/domain/entities/activity.entity'
+import { invalidateActivityCache } from '@/lib/redis/activity-cache'
 import logger from '@/lib/logger'
 
 /**
@@ -18,6 +19,7 @@ export async function logActivity(opts: {
   try {
     const repo = createActivityRepository()
     await repo.create(opts)
+    invalidateActivityCache(opts.workspaceId).catch(() => {})
   } catch (err) {
     logger.error({ err }, '[logActivity] Failed to persist activity log')
   }

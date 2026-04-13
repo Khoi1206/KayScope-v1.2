@@ -6,6 +6,7 @@ import type { ExecuteRequestDTO } from '@/modules/request/domain/entities/reques
 import { createHistoryRepository, createWorkspaceRepository } from '@/lib/db/repository-factory'
 import { WorkspaceMembershipService } from '@/lib/workspace/workspace-membership.service'
 import { getCachedEnvironment } from '@/lib/execute/env-cache'
+import { invalidateHistoryCache } from '@/lib/redis/history-cache'
 import { executeBodySchema } from '@/lib/schemas'
 import logger from '@/lib/logger'
 import { createRateLimiter } from '@/lib/api/rate-limiter'
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         responseBody: result.body.slice(0, 50_000), // cap stored body at 50 KB
         durationMs: result.durationMs,
         size: result.size,
-      }).catch((err) => { logger.error({ err }, '[execute] Failed to persist history') })
+      }).then(() => invalidateHistoryCache(dto.workspaceId!)).catch((err) => { logger.error({ err }, '[execute] Failed to persist history') })
     }
 
     return NextResponse.json(result)

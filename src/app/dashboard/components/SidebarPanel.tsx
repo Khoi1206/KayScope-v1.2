@@ -54,13 +54,14 @@ export interface SidebarPanelProps {
   deleteEnvironment: (env: Environment) => Promise<void>
   history: HistoryEntry[]
   loadingHistory: boolean
+  hasMoreHistory: boolean
   openHistoryInTab: (h: HistoryEntry) => void
   loadMoreHistory: () => void
   activityLogs: ActivityLogEntry[]
   loadingActivity: boolean
   loadActivity: () => void
   loadMoreActivity: () => void
-  dbActivityCount: number
+  hasMoreActivity: boolean
   setConfirmModal: Dispatch<SetStateAction<{ title: string; message: string; onConfirm: () => void; destructive?: boolean } | null>>
   setRenameModal: Dispatch<SetStateAction<{ label: string; currentName: string; onSave: (name: string) => void; title?: string } | null>>
   onOpenTestRun?: (run: import('./TestsSidebarPanel').SavedTestRun) => void
@@ -94,8 +95,8 @@ export const SidebarPanel = memo(function SidebarPanel({
   createRequestImmediately, deleteRequest, exportCollection, importFileRef,
   openInTab, activeReq, isDraft,
   environments, currentEnvId, setCurrentEnvId, setEnvEditorTarget, deleteEnvironment,
-  history, loadingHistory, openHistoryInTab, loadMoreHistory,
-  activityLogs, loadingActivity, loadActivity, loadMoreActivity, dbActivityCount,
+  history, loadingHistory, hasMoreHistory, openHistoryInTab, loadMoreHistory,
+  activityLogs, loadingActivity, loadActivity, loadMoreActivity, hasMoreActivity,
   setConfirmModal, setRenameModal,
   currentEnvName,
   onOpenTestRun,
@@ -412,6 +413,7 @@ export const SidebarPanel = memo(function SidebarPanel({
           <HistoryList
             history={history}
             loadingHistory={loadingHistory}
+            hasMoreHistory={hasMoreHistory}
             openHistoryInTab={openHistoryInTab}
             loadMoreHistory={loadMoreHistory}
           />
@@ -424,7 +426,7 @@ export const SidebarPanel = memo(function SidebarPanel({
             currentWs={currentWs}
             loadActivity={loadActivity}
             loadMoreActivity={loadMoreActivity}
-            dbActivityCount={dbActivityCount}
+            hasMoreActivity={hasMoreActivity}
           />
         )}
 
@@ -441,15 +443,16 @@ export const SidebarPanel = memo(function SidebarPanel({
 
 const HISTORY_ITEM_HEIGHT = 56 // px — matches px-4 py-2.5 + two text lines
 
-const HistoryList = memo(function HistoryList({ history, loadingHistory, openHistoryInTab, loadMoreHistory }: {
+const HistoryList = memo(function HistoryList({ history, loadingHistory, hasMoreHistory, openHistoryInTab, loadMoreHistory }: {
   history: HistoryEntry[]
   loadingHistory: boolean
+  hasMoreHistory: boolean
   openHistoryInTab: (h: HistoryEntry) => void
   loadMoreHistory: () => void
 }) {
   const t = useTranslations('sidebar')
   const scrollRef = useRef<HTMLDivElement>(null)
-  const showLoadMore = !loadingHistory && history.length > 0 && history.length % 50 === 0
+  const showLoadMore = !loadingHistory && history.length > 0 && hasMoreHistory
   const itemCount = history.length + (showLoadMore ? 1 : 0)
 
   const virtualizer = useVirtualizer({
@@ -514,17 +517,17 @@ const HistoryList = memo(function HistoryList({ history, loadingHistory, openHis
 
 const ACTIVITY_ITEM_HEIGHT = 68 // px — matches py-2.5 + 3 text lines
 
-const ActivityList = memo(function ActivityList({ activityLogs, loadingActivity, currentWs, loadActivity, loadMoreActivity, dbActivityCount }: {
+const ActivityList = memo(function ActivityList({ activityLogs, loadingActivity, currentWs, loadActivity, loadMoreActivity, hasMoreActivity }: {
   activityLogs: ActivityLogEntry[]
   loadingActivity: boolean
   currentWs: Workspace | null
   loadActivity: () => void
   loadMoreActivity: () => void
-  dbActivityCount: number
+  hasMoreActivity: boolean
 }) {
   const t = useTranslations('sidebar')
   const scrollRef = useRef<HTMLDivElement>(null)
-  const showLoadMore = !loadingActivity && activityLogs.length > 0 && dbActivityCount % 50 === 0
+  const showLoadMore = !loadingActivity && activityLogs.length > 0 && hasMoreActivity
   const itemCount = activityLogs.length + (showLoadMore ? 1 : 0)
 
   const virtualizer = useVirtualizer({

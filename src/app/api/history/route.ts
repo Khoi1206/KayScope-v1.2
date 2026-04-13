@@ -4,8 +4,9 @@ import { withApiHandler } from '@/lib/api/api-handler'
 import { createHistoryRepository, createRequestRepository, createCollectionRepository, createWorkspaceRepository } from '@/lib/db/repository-factory'
 import { WorkspaceMembershipService } from '@/lib/workspace/workspace-membership.service'
 import { ValidationError, NotFoundError } from '@/lib/errors/ValidationError'
-import { GetHistoryByWorkspaceUseCase } from '@/modules/history/domain/usecases/get-history-by-workspace.usecase'
 import { GetHistoryByRequestUseCase } from '@/modules/history/domain/usecases/get-history-by-request.usecase'
+import { GetHistoryByWorkspaceCursorUseCase } from '@/modules/history/domain/usecases/get-history-by-workspace-cursor.usecase'
+import { getCachedHistory, setCachedHistory } from '@/lib/redis/history-cache'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,10 +16,9 @@ export async function GET(req: NextRequest) {
 
     const workspaceId = req.nextUrl.searchParams.get('workspaceId')
     const requestId = req.nextUrl.searchParams.get('requestId')
+    const cursor = req.nextUrl.searchParams.get('cursor') ?? undefined
     const limitStr = req.nextUrl.searchParams.get('limit')
-    const skipStr = req.nextUrl.searchParams.get('skip')
     const limit = limitStr ? Math.min(parseInt(limitStr, 10) || 50, 200) : 50
-    const skip = skipStr ? Math.max(parseInt(skipStr, 10) || 0, 0) : 0
 
     const membershipService = new WorkspaceMembershipService(createWorkspaceRepository())
 
@@ -31,10 +31,26 @@ export async function GET(req: NextRequest) {
       const entries = await new GetHistoryByRequestUseCase(createHistoryRepository()).execute(requestId, limit)
       return NextResponse.json({ history: entries })
     }
+
     if (workspaceId) {
       await membershipService.assertMembership(workspaceId, session.user.id)
-      const entries = await new GetHistoryByWorkspaceUseCase(createHistoryRepository()).execute(workspaceId, limit, skip)
-      return NextResponse.json({ history: entries })
+
+      // First page with no cursor — serve from Redis cache when available
+      if (!cursor) {
+        const cached = await getCachedHistory(workspaceId)
+        if (cached) return NextResponse.json(cached)
+      }
+
+      const { items, nextCursor } = await new GetHistoryByWorkspaceCursorUseCase(
+        createHistoryRepository(),
+      ).execute(workspaceId, limit, cursor)
+
+      const payload = { history: items, nextCursor }
+
+      // Only cache the first page
+      if (!cursor) await setCachedHistory(workspaceId, payload)
+
+      return NextResponse.json(payload)
     }
 
     throw new ValidationError('workspaceId or requestId query param is required')

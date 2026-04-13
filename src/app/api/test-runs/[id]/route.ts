@@ -6,6 +6,8 @@ import { createTestRunRepository, createWorkspaceRepository } from '@/lib/db/rep
 import { WorkspaceMembershipService } from '@/lib/workspace/workspace-membership.service'
 import { UpdateTestRunUseCase } from '@/modules/test-run/domain/usecases/update-test-run.usecase'
 import { DeleteTestRunUseCase } from '@/modules/test-run/domain/usecases/delete-test-run.usecase'
+import { mutationLimiter } from '@/lib/api/shared-limiters'
+import { getClientIp } from '@/lib/api/http-utils'
 import { ValidationError } from '@/lib/errors/ValidationError'
 
 export const dynamic = 'force-dynamic'
@@ -37,6 +39,9 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   return withApiHandler(async () => {
+    if (!await mutationLimiter.check(getClientIp(req))) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    }
     const session = await requireSession()
     const body = await req.json()
     const parsed = updateTestRunSchema.safeParse(body)
@@ -53,10 +58,13 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   return withApiHandler(async () => {
+    if (!await mutationLimiter.check(getClientIp(req))) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    }
     const session = await requireSession()
     const membershipService = new WorkspaceMembershipService(createWorkspaceRepository())
     await new DeleteTestRunUseCase(createTestRunRepository(), membershipService).execute(

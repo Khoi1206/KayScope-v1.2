@@ -6,6 +6,8 @@ import { createTestRunRepository, createWorkspaceRepository } from '@/lib/db/rep
 import { WorkspaceMembershipService } from '@/lib/workspace/workspace-membership.service'
 import { GetTestRunsUseCase } from '@/modules/test-run/domain/usecases/get-test-runs.usecase'
 import { CreateTestRunUseCase } from '@/modules/test-run/domain/usecases/create-test-run.usecase'
+import { mutationLimiter } from '@/lib/api/shared-limiters'
+import { getClientIp } from '@/lib/api/http-utils'
 import { ValidationError } from '@/lib/errors/ValidationError'
 
 export const dynamic = 'force-dynamic'
@@ -52,6 +54,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   return withApiHandler(async () => {
+    if (!await mutationLimiter.check(getClientIp(req))) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    }
     const session = await requireSession()
     const body = await req.json()
     const parsed = createTestRunSchema.safeParse(body)
